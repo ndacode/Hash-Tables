@@ -1,121 +1,5 @@
 
 
-# LECTURE EXAMPLE
-# """
-# [ "Lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit" ]
-#    0        1        2        3      4       5              6             7
-# ​
-# "beej"
-# "elit"
-# ​
-# f("elit") -> 7
-# f("ipsum") -> 1
-# f("ipsum") -> 1
-# f("foobar") -> 1
-# ​
-# 1. Get bytes for the key
-# 2. Make up a function that returns an index for those bytes
-#    * Adding the bytes
-#    * Modding with the hash table size
-# """
-# # How many slots the hash table has
-
-# hash_table_size = 8
-# ​
-# # Space to hold values
-# hash_table = [None] * hash_table_size
-# ​
-# def myhash(s):
-# 	"""
-# 	Naive hashing function to turn a string into a number.
-# ​
-# 	Don't use this in real life, ever. It's a horrible hashing function.
-# ​
-# 	* It doesn't give a nice uniform distribution over the space
-# 	* Collisions are far more common than they need to be
-# ​
-# 	Output is 32 bits.
-# 	"""
-# ​
-# 	# Convert the argument to a string, and then to the bytes of that
-# 	# string:
-# 	str_bytes = str(s).encode()
-# ​
-# 	total = 0
-# ​
-# 	# Loop through all the bytes
-# 	for b in str_bytes:
-# 		total += b
-# ​
-# 		total &= 0xffffffff  # clamp to 32 bits
-# ​
-# 		# To make your DJB2 hash correct, add this as the last line of the loop:
-# 		#total &= 0xffffffff  # 32-bit (8 f's)
-# ​
-# 		# To make your FNV-1 hash correct, add this as the last line of the loop:
-# 		#total &= 0xffffffffffffffff  # 64-bit (16 f's)
-# ​
-# 	return total
-# ​
-# def hash_index(s):
-# 	"""
-# 	Take a hash value and make sure it's in the range of the size
-# 	of the hash table (so it won't fall out of bounds).
-# 	"""
-# 	h = myhash(s)
-# ​
-# 	return h % hash_table_size
-# ​
-# def put(key, value):
-# 	"""
-# 	Store a value in the table by a key.
-# 	"""
-# 	# Get the index into the hash table list
-# 	index = hash_index(key)
-# 	hash_table[index] = value
-# ​
-# def get(key):
-# 	"""
-# 	Get a value from the table by a key.
-# 	"""
-# 	index = hash_index(key)
-# 	return hash_table[index]
-# ​
-# def delete(key):
-# 	"""
-# 	Delete a value in the table by a key.
-# 	"""
-# 	index = hash_index(key)
-# 	hash_table[index] = None
-# ​
-# if __name__ == "__main__":
-# 	# If running from the command line
-# 	print(hash_index("Hello"))  # 4
-# 	print(hash_index("foobar"))  # 1
-# 	print(hash_index("cats"))
-# 	print(hash_index("beej"))
-# 	print(hash_index("foobaz"))  # 1, collision
-# 	print(hash_index("qux"))
-# ​
-# 	put("Hello", 37)   # similar to dict: d["Hello"] = 37
-# 	put("foobar", 128)
-# 	put("cats", "dogs")
-# ​
-# 	print(hash_table)
-# ​
-# 	print(get("Hello"))  # 37
-# ​
-# 	print(get("Hello"))
-# 	print(get("beej"))
-# 	print(get("foobar"))
-# ​
-# 	delete("Hello")
-# 	print(get("Hello"))  # None
-# 
-# 
-
-# **********************************************
-
 
 
 class HashTableEntry:
@@ -140,6 +24,9 @@ class HashTable:
 
     def __init__(self, capacity):
         self.capacity = [None] * capacity
+        self.length = 0
+        self.initial_size = capacity
+        # self.storage = [None] * capacity
 
     def fnv1(self, key):
         """
@@ -147,7 +34,20 @@ class HashTable:
 
         Implement this, and/or DJB2.
         """
+        'The core of the FNV-1 hash algorithm is as follows:'
+     
 
+    def fnv32a( str ):
+        hash = 0x811c9dc5
+        fnv_32_prime = 0x01000193
+        uint32_max = 2 ** 32
+        for s in str:
+            hash = hash ^ ord(s)
+            hash = (hash * fnv_32_prime) % uint32_max
+        return hval
+
+
+        
     def djb2(self, key):
         """
         DJB2 32-bit hash function
@@ -171,7 +71,7 @@ class HashTable:
         between within the storage capacity of the hash table.
         """
         #return self.fnv1(key) % self.capacity
-        return self.djb2(key) % self.capacity
+        return self.djb2(key) % self.initial_size
 
     def put(self, key, value):
         """
@@ -181,6 +81,25 @@ class HashTable:
 
         Implement this.
         """
+        # for the resize, you want to check if the number of entries is more than 70% of the size of the table
+        # this has to happen with the put in mind
+
+        # hash table count
+        # hast table entries 
+
+
+        hIndx = self.hash_index(key)
+        hashNode = HashTableEntry(key, value)
+        self.length += 1
+        bucket = self.capacity[hIndx]
+        while bucket is not None:
+            if bucket.key == key:
+                bucket.value = value
+                return
+            bucket = bucket.next
+        if bucket == None:
+            hashNode.next = self.capacity[hIndx]
+            self.capacity[hIndx] = hashNode
 
     def delete(self, key):
         """
@@ -190,6 +109,14 @@ class HashTable:
 
         Implement this.
         """
+        # if the key in the input matches the key in the bucket, make it None
+        hIndx = self.hash_index(key)
+        bucket = self.capacity[hIndx]
+        if bucket.key == key:
+                bucket.key = None
+                bucket.value = None
+                self.length -= 1
+                return
 
     def get(self, key):
         """
@@ -199,6 +126,17 @@ class HashTable:
 
         Implement this.
         """
+        
+        hIndx = self.hash_index(key)
+        bucket = self.capacity[hIndx]
+        while bucket is not None:
+            if bucket.key == key:
+                return bucket.value
+            bucket = bucket.next
+        if bucket is None:
+            return None
+
+
 
     def resize(self):
         """
@@ -207,6 +145,20 @@ class HashTable:
 
         Implement this.
         """
+        # if there's more entries in the table than there are table spaces,
+        print(f'capacity: {self.capacity}, length: {self.length}')
+        if self.capacity < self.length:
+            
+            # double the capacity size
+            self.capacity * 2
+            # for every entry in the table
+            for i in HashTable:
+                # rehash the entry
+                hash_index(i)
+                # put it back into the table
+                put(i)
+                return
+
 
 if __name__ == "__main__":
     ht = HashTable(2)
@@ -238,3 +190,132 @@ if __name__ == "__main__":
 
 
     print(ht.djb2("hello"))
+
+
+
+
+    # refresher
+#     (1)->(2)->(3)->None
+#      ^
+#      head
+
+
+# #   Case in which the head is empty
+#     None
+#      ^
+#      head
+
+
+#     class Node:
+#         def__init__(self, value):
+#             self.value = value
+#             self.next = None
+        
+#     # class HashTableEntry:
+#     #     def__init__(self, key, value):
+#     #         self.key = key
+#     #         self.value = value
+#     #         # add next to make it a linked list
+#     #         self.next = None
+
+    
+    
+    
+#     # we need to keep track of the head, the first element of the list
+#     # 
+
+#     # Empty linked list
+#     head = None 
+
+#     # Insert (at head)
+
+#     (99)(1)->(2)->(3)->None
+#     # ^
+#     #  insert at head
+#     def insert_at_head(value):
+#         # create the new Node
+#         n = Node(value)
+#         # point new node's next to current head
+#         n.next = head
+#         # make the new node the head
+#         head = n
+
+#         return n
+
+
+#     # Append (at tail)
+    
+#      #  insert at tail
+#               cur   n
+#                v    v
+#     (1)->(2)->(3)->(99)->None
+#      ^
+#      head
+
+#     def append_at_tail(value):
+#         n = Node(value)
+#         # handle the special case for if head is None
+#         if head is None:
+#             head = n
+#             return
+#         cur = head
+#         # this will fail with None as the head because cur doesn't have a next attribute
+#         while cur.next is not None:
+#             cur = cur.next
+
+#         cur.next = n
+
+
+#     # Find
+#     cur
+#      v
+#     (1)->(2)->(3)->None
+#      ^
+#      head
+
+#     def find(value):
+#         cur = head
+
+#         while cur is not None:
+#             if cur.value == value:
+#                 return cur    (you can also return the value)
+
+#             cur = cur.next
+
+#         return None
+        
+
+#     # Delete
+#       #  delete ( skip over the node we want to cut out)   
+#       #   we also need a reference to a previous node so that we can change what it's pointing to
+#     prev cur
+#      v    v    
+#     (1)->(2)->(3)->None
+#      ^
+#      head
+#     def delete(value):
+#         global head
+#         # find the node
+#         cur = head
+#         # Delete the head special case
+#         if cur.value = value:
+#             head = head.next
+#             cur.next = None
+#             return cur
+
+#         prev = None
+
+#         while cur is not None:
+#             if cur.value == value:
+#                 # Found it, delete it
+#                 prev.next = cur.next
+#                 cur.next = None
+#                 return cur
+
+#             prev = cur
+#             # prev = prev.next
+#             cur = cur.next
+
+#         return None
+        
+
